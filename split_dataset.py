@@ -13,7 +13,7 @@ os.makedirs(train_dir, exist_ok=True)
 os.makedirs(valid_dir, exist_ok=True)
 
 #data_set
-data = '../data/train/'
+data = '../data/train/' # --> change path here to point to entire dataset
 
 for class_ in os.listdir(data):
     # get the current class from the main data set and get the number of images and the path to each image
