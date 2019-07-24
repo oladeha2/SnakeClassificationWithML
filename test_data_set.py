@@ -22,8 +22,3 @@ for sample in train_sample:
     print('image class -->', training_set[sample][1])
     print('--------------------------')
 
-
-
-
-
-
