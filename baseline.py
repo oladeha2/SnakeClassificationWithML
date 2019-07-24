@@ -31,5 +31,5 @@ valid_data = datasets.ImageFolder(valid_dir, trans)
 print('Length of Training set -> ', len(train_data))
 print('Length of Validation set', len(valid_data))
 
-print('Classes -> ' train_data.classes)
+print('Classes -> ',  train_data.classes)
 
