@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 # load data and generate transforms for the data
 
 train_dir = '../data/snake/train/'
-valid_dir = '..data/snake/valid/'
+valid_dir = '../data/snake/valid/'
 
 # define the trasforms for each image in the data set
 
