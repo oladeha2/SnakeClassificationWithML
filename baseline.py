@@ -65,7 +65,7 @@ resnet.fc = nn.Linear(num_features, number_of_classes)
 resnet.to(device)
 
 # construct the optimizer --> optimizer for the gradient descent
-optimizer = optim.Adam(resnet.parameters(), lr=0.001, momentum=0.7) # --> test initial loss rate as 0.01 change subject to results and speed of learning during training
+optimizer = optim.Adam(resnet.parameters(), lr=0.001) # --> test initial loss rate as 0.01 change subject to results and speed of learning during training
 
 # define a loss rate scheduler that decays that reduces the learning rate as the number of epochs increases, prevents the learning rate fron bouncing up and down as the network trains
 lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
