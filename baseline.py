@@ -10,6 +10,7 @@ import torch
 
 import numpy as np
 import os
+from train import train_model
 
 # set random seeds
 torch.manual_seed(271828)
@@ -73,3 +74,4 @@ lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 # train the model end to end as opoosed to just training the final classification layer of the model
 
 # train the model using the folllowing parameters --> model, loss_function, loss rate scheduler, train data and validation data and the number of epochs -> not saving the checkpoints
+train_model(model=resnet, loss_function=loss_function, optimiser=optimizer, scheduler=lr_sched, train_data=train_loader, valid_data=valid_loader)
