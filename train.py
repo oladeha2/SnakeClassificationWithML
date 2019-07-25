@@ -3,7 +3,7 @@ import time
 import copy
 
 # train model function
-def train_model(model, loss_function, scheduler, num_epochs, train_data, valid_data):
+def train_model(model, loss_function, optimiser, scheduler, num_epochs, train_data, valid_data):
 
     # create data dictionary --> using data loaders
 
