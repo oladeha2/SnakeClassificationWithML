@@ -11,6 +11,7 @@ import torch
 import numpy as np
 import os
 from train import train_model
+import nonechucks as nc
 
 # set random seeds
 torch.manual_seed(271828)
@@ -40,15 +41,26 @@ trans = transforms.Compose([
 train_data = datasets.ImageFolder(train_dir, trans)
 valid_data = datasets.ImageFolder(valid_dir, trans)
 
-print('Length of Training set -> ', len(train_data))
-print('Length of Validation set -> ', len(valid_data))
+print('original length of training set ->', len(train_data))
+
+# remove any potential corrupted images
+safe_train = nc.SafeDataset(train_data)
+print('length after filtering ->', len(safe_train))
+print('-' * 10)
+
+print('original length of validatio set ->', len(valid_data))
+
+safe_valid = nc.SafeDataset(valid_data)
+print('length after filtering ->', len(valid_data))
+print('-' * 10)
+
 
 print('Classes -> ',  train_data.classes)
 number_of_classes = len(train_data.classes)
 
 #load the data using data loader
-train_loader = torchdata.DataLoader(train_data, batch_size=32, shuffle=True, num_workers=2)
-valid_loader = torchdata.DataLoader(valid_data, batch_size=32, shuffle=True, num_workers=2)
+train_loader = torchdata.DataLoader(safe_train, batch_size=32, shuffle=True, num_workers=1)
+valid_loader = torchdata.DataLoader(safe_valid, batch_size=32, shuffle=True, num_workers=1)
 
 
 # define the loss function
@@ -74,4 +86,10 @@ lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 # train the model end to end as opoosed to just training the final classification layer of the model
 
 # train the model using the folllowing parameters --> model, loss_function, loss rate scheduler, train data and validation data and the number of epochs -> not saving the checkpoints
-train_model(model=resnet, loss_function=loss_function, optimiser=optimizer, scheduler=lr_sched, num_epochs=1, data_dict={'train': train_loader, 'valid': valid_loader})
+model = train_model(model=resnet, 
+                    loss_function=loss_function,
+                    optimiser=optimizer,
+                    scheduler=lr_sched,
+                    num_epochs=1,
+                    data_dict={'train': train_loader, 'valid': valid_loader},
+                    data_lengths={'train': len(safe_train), 'valid': len(safe_valid)})
