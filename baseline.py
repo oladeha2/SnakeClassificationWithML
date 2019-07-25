@@ -74,4 +74,4 @@ lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 # train the model end to end as opoosed to just training the final classification layer of the model
 
 # train the model using the folllowing parameters --> model, loss_function, loss rate scheduler, train data and validation data and the number of epochs -> not saving the checkpoints
-train_model(model=resnet, loss_function=loss_function, optimiser=optimizer, scheduler=lr_sched, num_epochs=1, train_data=train_loader, valid_data=valid_loader)
+train_model(model=resnet, loss_function=loss_function, optimiser=optimizer, scheduler=lr_sched, num_epochs=1, data_dict={'train': train_loader, 'valid': valid_loader})

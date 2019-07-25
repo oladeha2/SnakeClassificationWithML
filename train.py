@@ -3,16 +3,11 @@ import time
 import copy
 
 # train model function
-def train_model(model, loss_function, optimiser, scheduler, num_epochs, train_data, valid_data):
+def train_model(model, loss_function, optimiser, scheduler, num_epochs, data_dict):
 
     device = 'cuda'
 
     # create data dictionary --> using data loaders
-
-    data_dict : { 
-        'train': train_data,
-        'valid': valid_data        
-    }
 
     start = time.time()
 
