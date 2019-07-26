@@ -2,19 +2,20 @@
 import torch
 import time
 import copy
+import os
 
 import numpy as np
 import pandas as pd
 
 from sklearn.metrics import f1_score
-from os import makedirs
-
+from progress.bar import IncrementalBar
 
 # train model function
 def train_model(model, loss_function, optimiser, scheduler, num_epochs, data_dict, data_lengths):
 
     device = 'cuda'
-    makedirs('/models/', exist_ok=True)
+    os.makedirs('models/', exist_ok=True)
+    os.makedirs('csvs/', exist_ok=True)
 
     # create data dictionary --> using data loaders
 
@@ -25,9 +26,20 @@ def train_model(model, loss_function, optimiser, scheduler, num_epochs, data_dic
     best_acc = 0.0
     best_f1 = 0.0
 
+    train_epoch_losees = []
+    valid_epoch_losses = []
+
+    train_epoch_accuracy = []
+    valid_epoch_accuracy = []
+
+    train_f1  = []
+    valid_f1 = []
+
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs-1))
-        print('-' * 10)
+        print('-' * 30)
+
+        epoch_start_time = time.time()
 
         for phase in ['train', 'valid']:
             if phase == 'train':
@@ -62,40 +74,72 @@ def train_model(model, loss_function, optimiser, scheduler, num_epochs, data_dic
                         loss.backward()
                         optimiser.step()
 
-            y_true = labels.cpu().numpy()
-            predictions = preds.cpu().numpy()
-            
-            # calculate the F1 score for each batch
-            f_score = f1_score(y_true=y_true, y_pred=predictions)
-            f1_scores.append(f_score)
+                y_true = labels.cpu().numpy()
+                predictions = preds.cpu().numpy()
+                
+                # calculate the F1 score for each batch
+                f_score = f1_score(y_true=y_true, y_pred=predictions, average='macro')
+                f1_scores.append(f_score)
+                print('f1 score sample -> ', f_score)
 
-            # calculate loss and accuracy for each batch and add to overall
-            running_loss += loss.item() * inputs.size(0)
-            running_corrects += torch.sum(predictions == labels.data)
+                # calculate loss and accuracy for each batch and add to overall
+                running_loss += loss.item() * inputs.size(0)
+                running_corrects += torch.sum(preds == labels.data)
 
-        # calculate overall loss accuracy and F1 for current epoch
-        epoch_loss = running_loss/data_lengths[phase]
-        epoch_acc = running_corrects.double() / data_lengths[phase]
-        f1_epoch = np.mean(np.array(f1_scores))
+            # calculate overall loss accuracy and F1 for current epoch
+            epoch_loss = running_loss/data_lengths[phase]
+            epoch_acc = running_corrects.double() / data_lengths[phase]
+            f1_epoch = np.mean(np.array(f1_scores))
 
-        print('Phase: {} Loss: {:.4f} Acc: {:.4f} F1 Score: {:.4f}'.format(phase, epoch_loss, epoch_acc, f1_epoch))
+            print('Phase: {} Loss: {:.4f} Acc: {:.4f} F1 Score: {:.4f}'.format(phase, epoch_loss, epoch_acc, f1_epoch)) 
 
-        # save the model based on the highest validation or f1 score in the validation phase of the trainning
-        if phase == 'valid' and f1_epoch > best_f1:
-            best_f1  = f1_epoch
-            # copy the model weights so they can be returned as part of this function
-            best_wts = copy.deepcopy(model.state_dict())
-            # save the best model here based on the best F1 score 
-            model_save_path = 'models/pre _trained_resnet101_Epoch_{}_F1_{:.2f}.pth'.format(epoch, f1_epoch)
-            torch.save(model.state_dict(), model_save_path)
-            print('CURRENT BEST MODEL')
+            #create columns for the final datda frame for all the data
+            if phase == 'train':
+                train_epoch_losees.append(epoch_loss)
+                train_epoch_accuracy.append(epoch_acc) 
+                train_f1.append(f1_epoch)
+            else:
+                valid_epoch_losses.append(epoch_loss)
+                valid_epoch_accuracy.append(epoch_loss)
+                valid_f1.append(f1_epoch)
+
+
+            # save the model based on the highest validation or f1 score in the validation phase of the trainning
+            if phase == 'valid' and f1_epoch > best_f1:
+                best_f1  = f1_epoch
+                # copy the model weights so they can be returned as part of this function
+                best_wts = copy.deepcopy(model.state_dict())
+                # save the best model here based on the best F1 score 
+                model_save_path = 'models/pre _trained_resnet101_Epoch_{}_F1_{:.2f}.pth'.format(epoch, f1_epoch)
+                torch.save(model.state_dict(), model_save_path)
+                print('CURRENT BEST MODEL')
+
+        end_epoch_time = time.time() - epoch_start_time
+        print('Epoch Time: {:.0f}m {:.0f}s'.format(
+            end_epoch_time // 60, end_epoch_time % 60
+        ))
 
         print()
 
+    # create and save the data frame with all data
+    columns = ['train_loss', 'train_acc', 'train_f1', 'valid_loss', 'valid_acc', 'valid_f1']
+    data = np.array([[train_epoch_losees, train_epoch_accuracy, train_f1, valid_epoch_losses, valid_epoch_accuracy, valid_f1]])
+
+    df = pd.DataFrame(
+        data=data, 
+        columns=columns
+    )
+    df.to_csv(
+        'csvs/pre_trained_resnet101_baseline.csv',
+        index=False
+    )
+
+    # load model with the best weights and return
     model.load_state_dict(best_wts)
 
     train_time = time.time() - start
 
+    # print time taken to train model
     print('Training Complete in {:.0f}m {:.0f}s'.format(
         train_time // 60, train_time % 60
     ))

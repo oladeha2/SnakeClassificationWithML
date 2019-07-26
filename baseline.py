@@ -46,21 +46,21 @@ print('original length of training set ->', len(train_data))
 # remove any potential corrupted images
 safe_train = nc.SafeDataset(train_data)
 print('length after filtering ->', len(safe_train))
-print('-' * 10)
+print('-' * 30)
 
 print('original length of validatio set ->', len(valid_data))
 
 safe_valid = nc.SafeDataset(valid_data)
-print('length after filtering ->', len(valid_data))
-print('-' * 10)
+print('length after filtering ->', len(safe_valid))
+print('-' * 30)
 
-
-print('Classes -> ',  train_data.classes)
 number_of_classes = len(train_data.classes)
+print('Number of classes ->', number_of_classes)
+print('-' * 30)
 
 #load the data using data loader
-train_loader = torchdata.DataLoader(safe_train, batch_size=32, shuffle=True, num_workers=1)
-valid_loader = torchdata.DataLoader(safe_valid, batch_size=32, shuffle=True, num_workers=1)
+train_loader = torchdata.DataLoader(safe_train, batch_size=32, shuffle=True, num_workers=4)
+valid_loader = torchdata.DataLoader(safe_valid, batch_size=32, shuffle=True, num_workers=4)
 
 
 # define the loss function
@@ -70,6 +70,7 @@ loss_function = nn.CrossEntropyLoss()
 # load the model and edit for the number of classes required for snake classification (45 classes)
 resnet = models.resnet101(pretrained=True, progress=True)
 print('Resnet Model Loaded')
+print('-' * 30 )
 
 # in_features is the number of features for the Linear Layer
 num_features = resnet.fc.in_features
@@ -90,6 +91,6 @@ model = train_model(model=resnet,
                     loss_function=loss_function,
                     optimiser=optimizer,
                     scheduler=lr_sched,
-                    num_epochs=1,
+                    num_epochs=25,
                     data_dict={'train': train_loader, 'valid': valid_loader},
                     data_lengths={'train': len(safe_train), 'valid': len(safe_valid)})
