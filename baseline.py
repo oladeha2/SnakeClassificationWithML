@@ -1,5 +1,10 @@
-# use RESNET101 as a baseline for the snake classification problem
-
+"""
+use RESNET101 as the baseline with weighted cross entropy loss and three drop out layers for improved accuracy
+The drop out layers are added in the following places:
+    1. One after the final set of convolutions
+    2. Second after the first drop out layer
+    3. A final drop out layer before the final fully connected layer
+"""
 import torchvision.models as models
 import torch.utils.data as torchdata
 import torchvision.datasets as datasets
@@ -59,38 +64,85 @@ print('Number of classes ->', number_of_classes)
 print('-' * 30)
 
 #load the data using data loader
-train_loader = torchdata.DataLoader(safe_train, batch_size=32, shuffle=True, num_workers=4)
-valid_loader = torchdata.DataLoader(safe_valid, batch_size=32, shuffle=True, num_workers=4)
+train_loader = torchdata.DataLoader(safe_train, batch_size=20, shuffle=True, num_workers=4)
+valid_loader = torchdata.DataLoader(safe_valid, batch_size=20, shuffle=True, num_workers=4)
 
 
-# define the loss function
-loss_function = nn.CrossEntropyLoss()
+# define the loss function, use weighted croess entropy loss, with weights based on the occurencies of each class in the data set
+
+classes_train = len(train_data.classes)
+examples_train = len(safe_train)
+print("number of classes in training set ->", classes_train)
+print('-' * 30)
+class_balance = torch.empty(classes_train)
+
+i = 0
+for cl in train_data.classes:
+    class_balance[i] = 1/len(os.listdir(os.path.join(train_dir, cl)))/examples_train
+    i += 1
+
+normalisation_factor = class_balance.sum()
+class_balance /= normalisation_factor
+class_balance = class_balance.to(device)
+
+loss_function = nn.CrossEntropyLoss(weight=class_balance)
+
 
 # using resnet101 pretrained to get the baseline 
-# load the model and edit for the number of classes required for snake classification (45 classes)
+# load the model and edit for the number of classes required for snake classification (45 classes) 
 resnet = models.resnet101(pretrained=True, progress=True)
 print('Resnet Model Loaded')
+
+in_features = resnet.fc.in_features
+
+# add the drop out layers to the model --> three drop out layers are added two before the avg pooling layer and one before the final linear layer for the final classification
+# note Sequential layer is a series of layers encapsulated in a single layer
+# add the first drop out layer
+resnet.layer4[1] = nn.Sequential(
+    nn.Dropout2d(0.15),
+    nn.ReLU(inplace=True)
+)
+
+# add the second drop out layer
+resnet.layer4[1] = nn.Sequential(
+    nn.Dropout2d(0.15),
+    nn.ReLU(inplace=True)
+)
+
+# add the drop out layer and edited final linear layer to allow for classification of the 45 classes
+# drop out kills some of the nodes in the layer of the model, allows for better generalisation, should improve the results hopefully
+resnet.fc = nn.Sequential(
+    nn.Dropout2d(0.5),
+    nn.Linear(in_features, number_of_classes)
+)
+
+print(resnet)
 print('-' * 30 )
 
-# in_features is the number of features for the Linear Layer
-num_features = resnet.fc.in_features
-# edit the final layer matrix for the new number of classes
-resnet.fc = nn.Linear(num_features, number_of_classes)
+# pass the model to the cuda device
 resnet.to(device)
 
 # construct the optimizer --> optimizer for the gradient descent
-optimizer = optim.Adam(resnet.parameters(), lr=0.001) # --> test initial loss rate as 0.01 change subject to results and speed of learning during training
+optimizer = optim.Adam(resnet.parameters(), lr=3e-4) # --> test initial loss rate as 0.01 change subject to results and speed of learning during training
 
 # define a loss rate scheduler that decays that reduces the learning rate as the number of epochs increases, prevents the learning rate fron bouncing up and down as the network trains
-lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
 # train the model end to end as opoosed to just training the final classification layer of the model
 
 # train the model using the folllowing parameters --> model, loss_function, loss rate scheduler, train data and validation data and the number of epochs -> not saving the checkpoints
+# model is trained for 27 epochs
 model = train_model(model=resnet, 
                     loss_function=loss_function,
                     optimiser=optimizer,
                     scheduler=lr_sched,
-                    num_epochs=25,
-                    data_dict={'train': train_loader, 'valid': valid_loader},
-                    data_lengths={'train': len(safe_train), 'valid': len(safe_valid)})
+                    num_epochs=27,
+                    data_dict={
+                        'train': train_loader,
+                        'valid': valid_loader
+                    },
+                    data_lengths={
+                        'train': len(safe_train), 
+                        'valid': len(safe_valid)
+                        }
+                )

@@ -80,7 +80,6 @@ def train_model(model, loss_function, optimiser, scheduler, num_epochs, data_dic
                 # calculate the F1 score for each batch
                 f_score = f1_score(y_true=y_true, y_pred=predictions, average='macro')
                 f1_scores.append(f_score)
-                print('f1 score sample -> ', f_score)
 
                 # calculate loss and accuracy for each batch and add to overall
                 running_loss += loss.item() * inputs.size(0)
@@ -122,12 +121,12 @@ def train_model(model, loss_function, optimiser, scheduler, num_epochs, data_dic
         print()
 
     # create and save the data frame with all data
-    columns = ['train_loss', 'train_acc', 'train_f1', 'valid_loss', 'valid_acc', 'valid_f1']
-    data = np.array([[train_epoch_losees, train_epoch_accuracy, train_f1, valid_epoch_losses, valid_epoch_accuracy, valid_f1]])
+    cols = ['train_loss', 'train_acc', 'train_f1', 'valid_loss', 'valid_acc', 'valid_f1']
+    data = np.array([train_epoch_losees, train_epoch_accuracy, train_f1, valid_epoch_losses, valid_epoch_accuracy, valid_f1])
 
     df = pd.DataFrame(
-        data=data, 
-        columns=columns
+        data, 
+        columns=cols
     )
     df.to_csv(
         'csvs/pre_trained_resnet101_baseline.csv',
