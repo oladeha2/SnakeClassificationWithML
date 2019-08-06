@@ -14,7 +14,7 @@ from progress.bar import IncrementalBar
 def train_model(model, loss_function, optimiser, scheduler, num_epochs, data_dict, data_lengths):
 
     device = 'cuda'
-    os.makedirs('models/', exist_ok=True)
+    os.makedirs('models/dropout/', exist_ok=True)
     os.makedirs('csvs/', exist_ok=True)
 
     # create data dictionary --> using data loaders
@@ -109,8 +109,7 @@ def train_model(model, loss_function, optimiser, scheduler, num_epochs, data_dic
                 # copy the model weights so they can be returned as part of this function
                 best_wts = copy.deepcopy(model.state_dict())
                 # save the best model here based on the best F1 score 
-                model_save_path = 'models/pre _trained_resnet101_Epoch_{}_F1_{:.2f}.pth'.format(epoch, f1_epoch)
-                torch.save(model.state_dict(), model_save_path)
+                torch.save(model, 'models/dropout/pretrained_resnet')
                 print('CURRENT BEST MODEL')
 
         end_epoch_time = time.time() - epoch_start_time
@@ -120,18 +119,18 @@ def train_model(model, loss_function, optimiser, scheduler, num_epochs, data_dic
 
         print()
 
-    # create and save the data frame with all data
-    cols = ['train_loss', 'train_acc', 'train_f1', 'valid_loss', 'valid_acc', 'valid_f1']
-    data = np.array([train_epoch_losees, train_epoch_accuracy, train_f1, valid_epoch_losses, valid_epoch_accuracy, valid_f1])
+    # # create and save the data frame with all data
+    # cols = ['train_loss', 'train_acc', 'train_f1', 'valid_loss', 'valid_acc', 'valid_f1']
+    # data = np.array([train_epoch_losees, train_epoch_accuracy, train_f1, valid_epoch_losses, valid_epoch_accuracy, valid_f1])
 
-    df = pd.DataFrame(
-        data, 
-        columns=cols
-    )
-    df.to_csv(
-        'csvs/pre_trained_resnet101_baseline.csv',
-        index=False
-    )
+    # df = pd.DataFrame(
+    #     data, 
+    #     columns=cols
+    # )
+    # df.to_csv(
+    #     'csvs/pre_trained_resnet101_baseline.csv',
+    #     index=False
+    # )
 
     # load model with the best weights and return
     model.load_state_dict(best_wts)

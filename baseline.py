@@ -33,11 +33,12 @@ valid_dir = '../data/snake/valid/'
 
 trans = transforms.Compose([
     # image transforms
-    transforms.RandomResizedCrop(224),
+    transforms.Resize(256),
+    transforms.CenterCrop(224),
     transforms.RandomHorizontalFlip(),
     # convert to tensor for input into the model
     transforms.ToTensor(),
-    # normalise the images last of all
+    # normalise image for std of 1 and mean 0 using image net values for mean and std
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
@@ -64,8 +65,8 @@ print('Number of classes ->', number_of_classes)
 print('-' * 30)
 
 #load the data using data loader
-train_loader = torchdata.DataLoader(safe_train, batch_size=20, shuffle=True, num_workers=4)
-valid_loader = torchdata.DataLoader(safe_valid, batch_size=20, shuffle=True, num_workers=4)
+train_loader = torchdata.DataLoader(safe_train, batch_size=32, shuffle=True, num_workers=4)
+valid_loader = torchdata.DataLoader(safe_valid, batch_size=32, shuffle=True, num_workers=4)
 
 
 # define the loss function, use weighted croess entropy loss, with weights based on the occurencies of each class in the data set
@@ -98,13 +99,13 @@ in_features = resnet.fc.in_features
 # add the drop out layers to the model --> three drop out layers are added two before the avg pooling layer and one before the final linear layer for the final classification
 # note Sequential layer is a series of layers encapsulated in a single layer
 # add the first drop out layer
-resnet.layer4[1] = nn.Sequential(
+resnet.layer4[1].relu = nn.Sequential(
     nn.Dropout2d(0.15),
     nn.ReLU(inplace=True)
 )
 
 # add the second drop out layer
-resnet.layer4[1] = nn.Sequential(
+resnet.layer4[2].relu = nn.Sequential(
     nn.Dropout2d(0.15),
     nn.ReLU(inplace=True)
 )
